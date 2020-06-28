@@ -13,8 +13,11 @@ from chemutils import get_mol, atom_features, bond_features, MAX_NB, ATOM_FDIM, 
 from subword_nmt.apply_bpe import BPE
 import codecs
 import pickle
-
+import wget
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc, roc_auc_score, f1_score, precision_recall_curve, average_precision_score
 import os
+
 if os.getcwd()[-7:] != 'Purpose':
 	os.chdir('./DeepPurpose/')
 # ESPF encoding
@@ -35,23 +38,18 @@ sub_csv = pd.read_csv('./ESPF/subword_units_map_uniprot_2000.csv')
 idx2word_p = sub_csv['index'].values
 words2idx_p = dict(zip(idx2word_p, range(0, len(idx2word_p))))
 
-from chemutils import get_mol, atom_features, bond_features, MAX_NB
-
 def create_var(tensor, requires_grad=None):
-    if requires_grad is None:
-        return Variable(tensor)
-    else:
-        return Variable(tensor, requires_grad=requires_grad)
+	if requires_grad is None:
+		return Variable(tensor)
+	else:
+		return Variable(tensor, requires_grad=requires_grad)
 
 def roc_curve(y_pred, y_label, figure_file, method_name):
-	'''
+	"""
 		y_pred is a list of length n.  (0,1)
 		y_label is a list of same length. 0/1
-		https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#sphx-glr-auto-examples-model-selection-plot-roc-py  
-	'''
-	import matplotlib.pyplot as plt
-	from sklearn.metrics import roc_curve, auc
-	from sklearn.metrics import roc_auc_score
+		https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html#sphx-glr-auto-examples-model-selection-plot-roc-py
+	"""
 	y_label = np.array(y_label)
 	y_pred = np.array(y_pred)	
 	fpr = dict()
@@ -61,7 +59,7 @@ def roc_curve(y_pred, y_label, figure_file, method_name):
 	roc_auc[0] = auc(fpr[0], tpr[0])
 	lw = 2
 	plt.plot(fpr[0], tpr[0],
-         lw=lw, label= method_name + ' (area = %0.2f)' % roc_auc[0])
+		 lw=lw, label= method_name + ' (area = %0.2f)' % roc_auc[0])
 	plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
 	plt.xlim([0.0, 1.0])
 	plt.ylim([0.0, 1.05])
@@ -74,16 +72,12 @@ def roc_curve(y_pred, y_label, figure_file, method_name):
 	return 
 
 def prauc_curve(y_pred, y_label, figure_file, method_name):
-	'''
+	"""
 		y_pred is a list of length n.  (0,1)
 		y_label is a list of same length. 0/1
-		reference: 
+		reference:
 			https://machinelearningmastery.com/roc-curves-and-precision-recall-curves-for-classification-in-python/
-	'''	
-	import matplotlib.pyplot as plt
-	from sklearn.metrics import precision_recall_curve, average_precision_score
-	from sklearn.metrics import f1_score
-	from sklearn.metrics import auc
+	"""
 	lr_precision, lr_recall, _ = precision_recall_curve(y_label, y_pred)    
 #	plt.plot([0,1], [no_skill, no_skill], linestyle='--')
 	plt.plot(lr_recall, lr_precision, lw = 2, label= method_name + ' (area = %0.2f)' % average_precision_score(y_label, y_pred))
@@ -102,31 +96,31 @@ def length_func(list_or_tensor):
 	return list_or_tensor.shape[0]
 
 def index_select_ND(source, dim, index):
-    index_size = index.size()
-    suffix_dim = source.size()[1:]
-    final_size = index_size + suffix_dim
-    target = source.index_select(dim, index.view(-1))
-    return target.view(final_size)
+	index_size = index.size()
+	suffix_dim = source.size()[1:]
+	final_size = index_size + suffix_dim
+	target = source.index_select(dim, index.view(-1))
+	return target.view(final_size)
 
 def smiles2morgan(s, radius = 2, nBits = 1024):
-    try:
-        mol = Chem.MolFromSmiles(s)
-        features_vec = AllChem.GetHashedMorganFingerprint(mol, radius, nBits=nBits)
-        features = np.zeros((1,))
-        DataStructs.ConvertToNumpyArray(features_vec, features)
-    except:
-        print('rdkit not found this smiles for morgan: ' + s + ' convert to all 1 features')
-        features = np.ones((nBits, ))
-    return features
+	try:
+		mol = Chem.MolFromSmiles(s)
+		features_vec = AllChem.GetHashedMorganFingerprint(mol, radius, nBits=nBits)
+		features = np.zeros((1,))
+		DataStructs.ConvertToNumpyArray(features_vec, features)
+	except:
+		print('rdkit not found this smiles for morgan: ' + s + ' convert to all 1 features')
+		features = np.ones((nBits, ))
+	return features
 
 def smiles2rdkit2d(s):    
-    try:
-        generator = rdNormalizedDescriptors.RDKit2DNormalized()
-        features = generator.process(s)[1:]
-    except:
-        print('descriptastorus not found this smiles: ' + s + ' convert to all 1 features')
-        features = np.ones((200, ))
-    return np.array(features)
+	try:
+		generator = rdNormalizedDescriptors.RDKit2DNormalized()
+		features = generator.process(s)[1:]
+	except:
+		print('descriptastorus not found this smiles: ' + s + ' convert to all 1 features')
+		features = np.ones((200, ))
+	return np.array(features)
 
 def smiles2daylight(s):
 	try:
@@ -144,12 +138,12 @@ def smiles2daylight(s):
 
 def smiles2mpnnfeature(smiles):
 	## mpn.py::tensorize  
-	'''
-		data-flow:   
+	"""
+		data-flow:
 			data_process(): apply(smiles2mpnnfeature)
 			DBTA: train(): data.DataLoader(data_process_loader())
 			mpnn_collate_func()
-	'''
+	"""
 	try: 
 		padding = torch.zeros(ATOM_FDIM + BOND_FDIM)
 		fatoms, fbonds = [], [padding] 
@@ -206,45 +200,45 @@ def smiles2mpnnfeature(smiles):
 
 # random_fold
 def create_fold(df, fold_seed, frac):
-    train_frac, val_frac, test_frac = frac
-    test = df.sample(frac = test_frac, replace = False, random_state = fold_seed)
-    train_val = df[~df.index.isin(test.index)]
-    val = train_val.sample(frac = val_frac/(1-test_frac), replace = False, random_state = 1)
-    train = train_val[~train_val.index.isin(val.index)]
-    
-    return train, val, test
+	train_frac, val_frac, test_frac = frac
+	test = df.sample(frac = test_frac, replace = False, random_state = fold_seed)
+	train_val = df[~df.index.isin(test.index)]
+	val = train_val.sample(frac = val_frac/(1-test_frac), replace = False, random_state = 1)
+	train = train_val[~train_val.index.isin(val.index)]
+
+	return train, val, test
 
 # cold protein
 def create_fold_setting_cold_protein(df, fold_seed, frac):
-    train_frac, val_frac, test_frac = frac
-    gene_drop = df['Target Sequence'].drop_duplicates().sample(frac = test_frac, replace = False, random_state = fold_seed).values
-    
-    test = df[df['Target Sequence'].isin(gene_drop)]
+	train_frac, val_frac, test_frac = frac
+	gene_drop = df['Target Sequence'].drop_duplicates().sample(frac = test_frac, replace = False, random_state = fold_seed).values
 
-    train_val = df[~df['Target Sequence'].isin(gene_drop)]
-    
-    gene_drop_val = train_val['Target Sequence'].drop_duplicates().sample(frac = val_frac/(1-test_frac), 
-    																	  replace = False, random_state = fold_seed).values
-    val = train_val[train_val['Target Sequence'].isin(gene_drop_val)]
-    train = train_val[~train_val['Target Sequence'].isin(gene_drop_val)]
-    
-    return train, val, test
+	test = df[df['Target Sequence'].isin(gene_drop)]
+
+	train_val = df[~df['Target Sequence'].isin(gene_drop)]
+
+	gene_drop_val = train_val['Target Sequence'].drop_duplicates().sample(frac = val_frac/(1-test_frac),
+																		  replace = False, random_state = fold_seed).values
+	val = train_val[train_val['Target Sequence'].isin(gene_drop_val)]
+	train = train_val[~train_val['Target Sequence'].isin(gene_drop_val)]
+
+	return train, val, test
 
 # cold drug
 def create_fold_setting_cold_drug(df, fold_seed, frac):
-    train_frac, val_frac, test_frac = frac
-    drug_drop = df['SMILES'].drop_duplicates().sample(frac = test_frac, replace = False, random_state = fold_seed).values
-    
-    test = df[df['SMILES'].isin(drug_drop)]
+	train_frac, val_frac, test_frac = frac
+	drug_drop = df['SMILES'].drop_duplicates().sample(frac = test_frac, replace = False, random_state = fold_seed).values
 
-    train_val = df[~df['SMILES'].isin(drug_drop)]
-    
-    drug_drop_val = train_val['SMILES'].drop_duplicates().sample(frac = val_frac/(1-test_frac),
-    															 replace = False, random_state = fold_seed).values
-    val = train_val[train_val['SMILES'].isin(drug_drop_val)]
-    train = train_val[~train_val['SMILES'].isin(drug_drop_val)]
-    
-    return train, val, test
+	test = df[df['SMILES'].isin(drug_drop)]
+
+	train_val = df[~df['SMILES'].isin(drug_drop)]
+
+	drug_drop_val = train_val['SMILES'].drop_duplicates().sample(frac = val_frac/(1-test_frac),
+																 replace = False, random_state = fold_seed).values
+	val = train_val[train_val['SMILES'].isin(drug_drop_val)]
+	train = train_val[~train_val['SMILES'].isin(drug_drop_val)]
+
+	return train, val, test
 
 #TODO: add one target, drug folding
 
@@ -265,11 +259,11 @@ def data_process(X_drug, X_target, y=None, drug_encoding=None, target_encoding=N
 							inplace=True)
 
 	print('in total: ' + str(len(df_data)) + ' drug-target pairs')
-    
+
 	if sample_frac != 1:
 		df_data = df_data.sample(frac = sample_frac).reset_index(drop = True)
 		print('after subsample: ' + str(len(df_data)) + ' drug-target pairs')        
-        
+
 	print('encoding drug...')
 	print('unique drugs: ' + str(len(df_data['SMILES'].unique())))
 
@@ -569,58 +563,56 @@ def convert_y_unit(y, from_, to_):
 	return y
 
 def protein2emb_encoder(x):
-    max_p = 545
-    t1 = pbpe.process_line(x).split()  # split
-    try:
-        i1 = np.asarray([words2idx_p[i] for i in t1])  # index
-    except:
-        i1 = np.array([0])
+	max_p = 545
+	t1 = pbpe.process_line(x).split()  # split
+	try:
+		i1 = np.asarray([words2idx_p[i] for i in t1])  # index
+	except:
+		i1 = np.array([0])
 
-    l = len(i1)
+	l = len(i1)
    
-    if l < max_p:
-        i = np.pad(i1, (0, max_p - l), 'constant', constant_values = 0)
-        input_mask = ([1] * l) + ([0] * (max_p - l))
-    else:
-        i = i1[:max_p]
-        input_mask = [1] * max_p
-        
-    return i, np.asarray(input_mask)
+	if l < max_p:
+		i = np.pad(i1, (0, max_p - l), 'constant', constant_values = 0)
+		input_mask = ([1] * l) + ([0] * (max_p - l))
+	else:
+		i = i1[:max_p]
+		input_mask = [1] * max_p
+
+	return i, np.asarray(input_mask)
 
 def drug2emb_encoder(x):
 
-    max_d = 50
-    t1 = dbpe.process_line(x).split()  # split
-    try:
-        i1 = np.asarray([words2idx_d[i] for i in t1])  # index
-    except:
-        i1 = np.array([0])
-    
-    l = len(i1)
+	max_d = 50
+	t1 = dbpe.process_line(x).split()  # split
+	try:
+		i1 = np.asarray([words2idx_d[i] for i in t1])  # index
+	except:
+		i1 = np.array([0])
 
-    if l < max_d:
-        i = np.pad(i1, (0, max_d - l), 'constant', constant_values = 0)
-        input_mask = ([1] * l) + ([0] * (max_d - l))
+	l = len(i1)
 
-    else:
-        i = i1[:max_d]
-        input_mask = [1] * max_d
+	if l < max_d:
+		i = np.pad(i1, (0, max_d - l), 'constant', constant_values = 0)
+		input_mask = ([1] * l) + ([0] * (max_d - l))
 
-    return i, np.asarray(input_mask)
-    '''
-		the returned tuple is fed into models.transformer.forward() 
-    '''
+	else:
+		i = i1[:max_d]
+		input_mask = [1] * max_d
+
+	return i, np.asarray(input_mask)
+	# the returned tuple is fed into models.transformer.forward()
 
 
 # '?' padding
 amino_char = ['?', 'A', 'C', 'B', 'E', 'D', 'G', 'F', 'I', 'H', 'K', 'M', 'L', 'O',
-       'N', 'Q', 'P', 'S', 'R', 'U', 'T', 'W', 'V', 'Y', 'X', 'Z']
+	   'N', 'Q', 'P', 'S', 'R', 'U', 'T', 'W', 'V', 'Y', 'X', 'Z']
 
 smiles_char = ['?', '#', '%', ')', '(', '+', '-', '.', '1', '0', '3', '2', '5', '4',
-       '7', '6', '9', '8', '=', 'A', 'C', 'B', 'E', 'D', 'G', 'F', 'I',
-       'H', 'K', 'M', 'L', 'O', 'N', 'P', 'S', 'R', 'U', 'T', 'W', 'V',
-       'Y', '[', 'Z', ']', '_', 'a', 'c', 'b', 'e', 'd', 'g', 'f', 'i',
-       'h', 'm', 'l', 'o', 'n', 's', 'r', 'u', 't', 'y']
+	   '7', '6', '9', '8', '=', 'A', 'C', 'B', 'E', 'D', 'G', 'F', 'I',
+	   'H', 'K', 'M', 'L', 'O', 'N', 'P', 'S', 'R', 'U', 'T', 'W', 'V',
+	   'Y', '[', 'Z', ']', '_', 'a', 'c', 'b', 'e', 'd', 'g', 'f', 'i',
+	   'h', 'm', 'l', 'o', 'n', 's', 'r', 'u', 't', 'y']
 
 from sklearn.preprocessing import OneHotEncoder
 enc_protein = OneHotEncoder().fit(np.array(amino_char).reshape(-1, 1))
@@ -675,7 +667,7 @@ def download_pretrained_model(model_name, save_dir = './save_folder'):
 
 		print('Downloading finished... Beginning to extract zip file...')
 		with ZipFile(pretrained_dir_, 'r') as zip: 
-		    zip.extractall(path = pretrained_dir)
+			zip.extractall(path = pretrained_dir)
 		print('pretrained_DeepDTA Successfully Downloaded...')
 		pretrained_dir = os.path.join(pretrained_dir, 'pretrained_DeepDTA')
 		return pretrained_dir        
