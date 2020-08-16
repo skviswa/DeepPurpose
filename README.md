@@ -11,6 +11,9 @@
 This repository hosts DeepPurpose, a Deep Learning Based Drug-Target Interaction Prediction Toolkit with Applications in Drug Repurposing and Virtual Screening Toolkit (using PyTorch). It allows very easy usage (only one line of code!) for non-computational domain researchers to be able to obtain a list of potential drugs using deep learning while facilitating deep learning method research in this topic by providing a flexible framework (less than 10 lines of codes!) and baselines. 
 
 ### News!
+- [07/20] A simple web UI for DTI prediction can be created under 10 lines using [Gradio](https://github.com/gradio-app/gradio)! A demo is provided [here](https://github.com/kexinhuang12345/DeepPurpose/blob/master/DEMO/web_ui_gradio.ipynb).
+- [07/20] A [blog](https://towardsdatascience.com/drug-discovery-with-deep-learning-under-10-lines-of-codes-742ee306732a) is posted on the Towards Data Science Medium column, check this out!
+- [07/20] Two tutorials are online to go through DeepPurpose's framework to do drug-target interaction prediction and drug property prediction ([DTI](Tutorial_1_DTI_Prediction.ipynb), [Drug Property](Tutorial_2_Drug_Property_Pred_Assay_Data.ipynb)). 
 - [05/20] Support drug property prediction for screening data that does not have target proteins such as bacteria! An example using RDKit2D with DNN for training and repurposing for pseudomonas aeruginosa (MIT AI Cures's [open task](https://www.aicures.mit.edu/data)) is provided as a [demo](DEMO/Drug_Property_Prediction_Bacterial_Activity-RDKit2D_MIT_AiCures.ipynb).
 
 - [05/20] Now supports hyperparameter tuning via Bayesian Optimization through the [Ax platform](https://ax.dev/)! A demo is provided in [here](DEMO/Drug_Property_Pred-Ax-Hyperparam-Tune.ipynb). 
@@ -38,115 +41,7 @@ This repository hosts DeepPurpose, a Deep Learning Based Drug-Target Interaction
 
 ## Example
 
-### Case Study 1 (a): Antiviral Drugs Repurposing for SARS-CoV2 3CLPro, using One Line.
-  Given a new target sequence (e.g. SARS-CoV2 3CL Protease), retrieve a list of repurposing drugs from a curated drug library of 81 antiviral drugs. The Binding Score is the Kd values. Results aggregated from five pretrained model on BindingDB dataset!
-
-<details>
-  <summary>Click here for the code!</summary>
-
-```python
-from DeepPurpose import oneliner
-from DeepPurpose.dataset import *
-oneliner.repurpose(*load_SARS_CoV2_Protease_3CL(), *load_antiviral_drugs(no_cid = True))
-```
-```
-----output----
-Drug Repurposing Result for SARS-CoV2 3CL Protease
-+------+----------------------+------------------------+---------------+
-| Rank |      Drug Name       |      Target Name       | Binding Score |
-+------+----------------------+------------------------+---------------+
-|  1   |      Sofosbuvir      | SARS-CoV2 3CL Protease |     190.25    |
-|  2   |     Daclatasvir      | SARS-CoV2 3CL Protease |     214.58    |
-|  3   |      Vicriviroc      | SARS-CoV2 3CL Protease |     315.70    |
-|  4   |      Simeprevir      | SARS-CoV2 3CL Protease |     396.53    |
-|  5   |      Etravirine      | SARS-CoV2 3CL Protease |     409.34    |
-|  6   |      Amantadine      | SARS-CoV2 3CL Protease |     419.76    |
-|  7   |      Letermovir      | SARS-CoV2 3CL Protease |     460.28    |
-|  8   |     Rilpivirine      | SARS-CoV2 3CL Protease |     470.79    |
-|  9   |      Darunavir       | SARS-CoV2 3CL Protease |     472.24    |
-|  10  |      Lopinavir       | SARS-CoV2 3CL Protease |     473.01    |
-|  11  |      Maraviroc       | SARS-CoV2 3CL Protease |     474.86    |
-|  12  |    Fosamprenavir     | SARS-CoV2 3CL Protease |     487.45    |
-|  13  |      Ritonavir       | SARS-CoV2 3CL Protease |     492.19    |
-....
-```
-
-</details>
-
-### Case Study 1 (b): New Target Repurposing using Broad Drug Repurposing Hub, with One Line.
-Given a new target sequence (e.g. MMP9), retrieve a list of repurposing drugs from Broad Drug Repurposing Hub, which is the default. Results also aggregated from five pretrained model! Note the drug name here is the Pubchem CID since some drug names in Broad is too long.
-
-<details>
-  <summary>Click here for the code!</summary>
-	
-```python
-from DeepPurpose import oneliner
-from DeepPurpose.dataset import *
-oneliner.repurpose(*load_MMP9())
-```
-```
-----output----
-Drug Repurposing Result for MMP9
-+------+-------------+-------------+---------------+
-| Rank |  Drug Name  | Target Name | Binding Score |
-+------+-------------+-------------+---------------+
-|  1   |  6917849.0  |     MMP9    |      5.42     |
-|  2   |   441336.0  |     MMP9    |      6.97     |
-|  3   |   441335.0  |     MMP9    |      8.37     |
-|  4   |   27924.0   |     MMP9    |      9.84     |
-|  5   |   16490.0   |     MMP9    |      9.86     |
-|  6   |  23947600.0 |     MMP9    |     10.11     |
-|  7   |    5743.0   |     MMP9    |     12.44     |
-|  8   |    3288.0   |     MMP9    |     15.91     |
-|  9   | 129009989.0 |     MMP9    |     18.01     |
-|  10  | 129009925.0 |     MMP9    |     23.13     |
-|  11  |  40467076.0 |     MMP9    |     23.48     |
-|  12  |  6917974.0  |     MMP9    |     24.50     |
-|  13  |  73707512.0 |     MMP9    |     26.83     |
-```
-  
-</details>
-
-
-
-### Case Study 2: Repurposing using Customized training data, with One Line.
-Given a new target sequence (e.g. SARS-CoV 3CL Pro), training on new data (AID1706 Bioassay), and then retrieve a list of repurposing drugs from a proprietary library (e.g. antiviral drugs). The model can be trained from scratch or finetuned from the pretraining checkpoint!
-
-<details>
-  <summary>Click here for the code!</summary>
-	
-```python
-from DeepPurpose import oneliner
-from DeepPurpose.dataset import *
-
-oneliner.repurpose(*load_SARS_CoV_Protease_3CL(), *load_antiviral_drugs(no_cid = True),  *load_AID1706_SARS_CoV_3CL(), \
-		split='HTS', convert_y = False, frac=[0.8,0.1,0.1], pretrained = False, agg = 'max_effect')
-```
-```
-----output----
-Drug Repurposing Result for SARS-CoV 3CL Protease
-+------+----------------------+-----------------------+-------------+-------------+
-| Rank |      Drug Name       |      Target Name      | Interaction | Probability |
-+------+----------------------+-----------------------+-------------+-------------+
-|  1   |      Remdesivir      | SARS-CoV 3CL Protease |     YES     |     0.99    |
-|  2   |      Efavirenz       | SARS-CoV 3CL Protease |     YES     |     0.98    |
-|  3   |      Vicriviroc      | SARS-CoV 3CL Protease |     YES     |     0.98    |
-|  4   |      Tipranavir      | SARS-CoV 3CL Protease |     YES     |     0.96    |
-|  5   |     Methisazone      | SARS-CoV 3CL Protease |     YES     |     0.94    |
-|  6   |      Letermovir      | SARS-CoV 3CL Protease |     YES     |     0.88    |
-|  7   |     Idoxuridine      | SARS-CoV 3CL Protease |     YES     |     0.77    |
-|  8   |       Loviride       | SARS-CoV 3CL Protease |     YES     |     0.76    |
-|  9   |      Baloxavir       | SARS-CoV 3CL Protease |     YES     |     0.74    |
-|  10  |     Ibacitabine      | SARS-CoV 3CL Protease |     YES     |     0.70    |
-|  11  |     Taribavirin      | SARS-CoV 3CL Protease |     YES     |     0.65    |
-|  12  |      Indinavir       | SARS-CoV 3CL Protease |     YES     |     0.62    |
-|  13  |   Podophyllotoxin    | SARS-CoV 3CL Protease |     YES     |     0.60    |
-....
-```
-</details>
-
-### Case Study 3: A Framework for Drug Target Interaction Prediction, with less than 10 lines of codes.
-Under the hood of one model from scratch, a flexible framework for method researchers:
+### Case Study 1: A Framework for Drug Target Interaction Prediction, with less than 10 lines of codes.
 
 <details>
   <summary>Click here for the code!</summary>
@@ -199,6 +94,148 @@ _ = models.virtual_screening(X_repurpose, target, net, drug_name, target_name)
 ```
 
 </details>
+
+
+### Case Study 2: A Framework for Drug Property Prediction, with less than 10 lines of codes.
+Many screening dataset is from assay, thus have only drug and its activity score. DeepPurpose also provides a framework for this use case:
+
+<details>
+  <summary>Click here for the code!</summary>
+
+```python
+import DeepPurpose.property_pred as models
+from DeepPurpose.utils import *
+from DeepPurpose.dataset import *
+
+# load AID1706 Assay Data
+X_drugs, _, y = load_AID1706_SARS_CoV_3CL()
+
+drug_encoding = 'rdkit_2d_normalized'
+train, val, test = data_process(X_drug = X_drugs, y = y, 
+			    drug_encoding = drug_encoding,
+			    split_method='random', 
+			    random_seed = 1)
+
+config = generate_config(drug_encoding = drug_encoding, 
+                         cls_hidden_dims = [512], 
+                         train_epoch = 20, 
+                         LR = 0.001, 
+                         batch_size = 128,
+                        )
+model = models.model_initialize(**config)
+model.train(train, val, test)
+
+```
+
+</details>
+
+### Case Study 3 (a): Antiviral Drugs Repurposing for SARS-CoV2 3CLPro, using One Line.
+  Given a new target sequence (e.g. SARS-CoV2 3CL Protease), retrieve a list of repurposing drugs from a curated drug library of 81 antiviral drugs. The Binding Score is the Kd values. Results aggregated from five pretrained model on BindingDB dataset!
+
+<details>
+  <summary>Click here for the code!</summary>
+
+```python
+from DeepPurpose import oneliner
+from DeepPurpose.dataset import *
+oneliner.repurpose(*load_SARS_CoV2_Protease_3CL(), *load_antiviral_drugs(no_cid = True))
+```
+```
+----output----
+Drug Repurposing Result for SARS-CoV2 3CL Protease
++------+----------------------+------------------------+---------------+
+| Rank |      Drug Name       |      Target Name       | Binding Score |
++------+----------------------+------------------------+---------------+
+|  1   |      Sofosbuvir      | SARS-CoV2 3CL Protease |     190.25    |
+|  2   |     Daclatasvir      | SARS-CoV2 3CL Protease |     214.58    |
+|  3   |      Vicriviroc      | SARS-CoV2 3CL Protease |     315.70    |
+|  4   |      Simeprevir      | SARS-CoV2 3CL Protease |     396.53    |
+|  5   |      Etravirine      | SARS-CoV2 3CL Protease |     409.34    |
+|  6   |      Amantadine      | SARS-CoV2 3CL Protease |     419.76    |
+|  7   |      Letermovir      | SARS-CoV2 3CL Protease |     460.28    |
+|  8   |     Rilpivirine      | SARS-CoV2 3CL Protease |     470.79    |
+|  9   |      Darunavir       | SARS-CoV2 3CL Protease |     472.24    |
+|  10  |      Lopinavir       | SARS-CoV2 3CL Protease |     473.01    |
+|  11  |      Maraviroc       | SARS-CoV2 3CL Protease |     474.86    |
+|  12  |    Fosamprenavir     | SARS-CoV2 3CL Protease |     487.45    |
+|  13  |      Ritonavir       | SARS-CoV2 3CL Protease |     492.19    |
+....
+```
+
+</details>
+
+### Case Study 3 (b): New Target Repurposing using Broad Drug Repurposing Hub, with One Line.
+Given a new target sequence (e.g. MMP9), retrieve a list of repurposing drugs from Broad Drug Repurposing Hub, which is the default. Results also aggregated from five pretrained model! Note the drug name here is the Pubchem CID since some drug names in Broad is too long.
+
+<details>
+  <summary>Click here for the code!</summary>
+	
+```python
+from DeepPurpose import oneliner
+from DeepPurpose.dataset import *
+oneliner.repurpose(*load_MMP9())
+```
+```
+----output----
+Drug Repurposing Result for MMP9
++------+-------------+-------------+---------------+
+| Rank |  Drug Name  | Target Name | Binding Score |
++------+-------------+-------------+---------------+
+|  1   |  6917849.0  |     MMP9    |      5.42     |
+|  2   |   441336.0  |     MMP9    |      6.97     |
+|  3   |   441335.0  |     MMP9    |      8.37     |
+|  4   |   27924.0   |     MMP9    |      9.84     |
+|  5   |   16490.0   |     MMP9    |      9.86     |
+|  6   |  23947600.0 |     MMP9    |     10.11     |
+|  7   |    5743.0   |     MMP9    |     12.44     |
+|  8   |    3288.0   |     MMP9    |     15.91     |
+|  9   | 129009989.0 |     MMP9    |     18.01     |
+|  10  | 129009925.0 |     MMP9    |     23.13     |
+|  11  |  40467076.0 |     MMP9    |     23.48     |
+|  12  |  6917974.0  |     MMP9    |     24.50     |
+|  13  |  73707512.0 |     MMP9    |     26.83     |
+```
+  
+</details>
+
+
+
+### Case Study 4: Repurposing using Customized training data, with One Line.
+Given a new target sequence (e.g. SARS-CoV 3CL Pro), training on new data (AID1706 Bioassay), and then retrieve a list of repurposing drugs from a proprietary library (e.g. antiviral drugs). The model can be trained from scratch or finetuned from the pretraining checkpoint!
+
+<details>
+  <summary>Click here for the code!</summary>
+	
+```python
+from DeepPurpose import oneliner
+from DeepPurpose.dataset import *
+
+oneliner.repurpose(*load_SARS_CoV_Protease_3CL(), *load_antiviral_drugs(no_cid = True),  *load_AID1706_SARS_CoV_3CL(), \
+		split='HTS', convert_y = False, frac=[0.8,0.1,0.1], pretrained = False, agg = 'max_effect')
+```
+```
+----output----
+Drug Repurposing Result for SARS-CoV 3CL Protease
++------+----------------------+-----------------------+-------------+-------------+
+| Rank |      Drug Name       |      Target Name      | Interaction | Probability |
++------+----------------------+-----------------------+-------------+-------------+
+|  1   |      Remdesivir      | SARS-CoV 3CL Protease |     YES     |     0.99    |
+|  2   |      Efavirenz       | SARS-CoV 3CL Protease |     YES     |     0.98    |
+|  3   |      Vicriviroc      | SARS-CoV 3CL Protease |     YES     |     0.98    |
+|  4   |      Tipranavir      | SARS-CoV 3CL Protease |     YES     |     0.96    |
+|  5   |     Methisazone      | SARS-CoV 3CL Protease |     YES     |     0.94    |
+|  6   |      Letermovir      | SARS-CoV 3CL Protease |     YES     |     0.88    |
+|  7   |     Idoxuridine      | SARS-CoV 3CL Protease |     YES     |     0.77    |
+|  8   |       Loviride       | SARS-CoV 3CL Protease |     YES     |     0.76    |
+|  9   |      Baloxavir       | SARS-CoV 3CL Protease |     YES     |     0.74    |
+|  10  |     Ibacitabine      | SARS-CoV 3CL Protease |     YES     |     0.70    |
+|  11  |     Taribavirin      | SARS-CoV 3CL Protease |     YES     |     0.65    |
+|  12  |      Indinavir       | SARS-CoV 3CL Protease |     YES     |     0.62    |
+|  13  |   Podophyllotoxin    | SARS-CoV 3CL Protease |     YES     |     0.60    |
+....
+```
+</details>
+
 
 ## Install & Usage
 Try it on [Binder](https://mybinder.org)! Binder is a cloud Jupyter Notebook interface that will install our environment dependency for you. 
@@ -283,8 +320,8 @@ and more in the [DEMO](https://github.com/kexinhuang12345/DeepPurpose/tree/maste
 Please cite [arxiv](https://arxiv.org/abs/2004.08919) for now:
 ```
 @article{deeppurpose,
-  title={DeepPurpose: a Deep Learning Based Drug Repurposing Toolkit},
-  author={Huang, Kexin and Fu, Tianfan and Xiao, Cao and Glass, Lucas and Sun, Jimeng},
+  title={DeepPurpose: a Deep Learning Library for Drug-Target Interaction Prediction and Applications to Repurposing and Screening},
+  author={Huang, Kexin and Fu, Tianfan and Glass, Lucas and Zitnik, Marinka and Xiao, Cao and Sun, Jimeng},
   journal={arXiv preprint arXiv:2004.08919},
   year={2020}
 }
@@ -456,7 +493,6 @@ Model name consists of first the drug encoding, then the target encoding and the
 |Morgan_AAC_BindingDB|
 |Morgan_AAC_KIBA|
 |Morgan_AAC_DAVIS|
-|CNN_Transformer_DAVIS|
 
 </details>
 

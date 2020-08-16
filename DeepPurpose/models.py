@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from time import time
-from sklearn.metrics import mean_squared_error, roc_auc_score, average_precision_score, f1_score
+from sklearn.metrics import mean_squared_error, roc_auc_score, average_precision_score, f1_score, log_loss
 from lifelines.utils import concordance_index
 from scipy.stats import pearsonr
 import pickle 
@@ -134,8 +134,9 @@ class CNN_RNN(nn.Sequential):
 								bidirectional = config['rnn_drug_bidirectional'])
 			else:
 				raise AttributeError('Please use LSTM or GRU.')
+			direction = 2 if config['rnn_drug_bidirectional'] else 1
 			self.rnn = self.rnn.double()
-			self.fc1 = nn.Linear(config['rnn_drug_hid_dim'] * config['rnn_drug_n_layers'] * n_size_d, config['hidden_dim_drug'])
+			self.fc1 = nn.Linear(config['rnn_drug_hid_dim'] * direction * n_size_p, config['hidden_dim_drug'])
 
 		if encoding == 'protein':
 			in_ch = [26] + config['cnn_target_filters']
@@ -163,9 +164,9 @@ class CNN_RNN(nn.Sequential):
 								bidirectional = config['rnn_target_bidirectional'])
 			else:
 				raise AttributeError('Please use LSTM or GRU.')
-
+			direction = 2 if config['rnn_target_bidirectional'] else 1
 			self.rnn = self.rnn.double()
-			self.fc1 = nn.Linear(config['rnn_target_hid_dim'] * config['rnn_target_n_layers'] * n_size_p, config['hidden_dim_protein'])
+			self.fc1 = nn.Linear(config['rnn_target_hid_dim'] * direction * n_size_p, config['hidden_dim_protein'])
 		self.encoding = encoding
 		self.config = config
 
@@ -360,6 +361,7 @@ def repurpose(X_repurpose, target, model, drug_names = None, target_name = None,
 			  result_folder = "./result/", convert_y = False, output_num_max = 10, verbose = True):
 	# X_repurpose: a list of SMILES string
 	# target: one target 
+	
 	fo = os.path.join(result_folder, "repurposing.txt")
 	print_list = []
 	with open(fo, 'w') as fout:
@@ -380,7 +382,10 @@ def repurpose(X_repurpose, target, model, drug_names = None, target_name = None,
 			### regression 
 			table_header = ["Rank", "Drug Name", "Target Name", "Binding Score"]
 		table = PrettyTable(table_header)
-
+		if drug_names is None:
+			drug_names = ['Drug ' + str(i) for i in list(range(len(X_repurpose)))]
+		if target_name is None:
+			target_name = 'Target' 
 		if drug_names is not None:
 			f_d = max([len(o) for o in drug_names]) + 1
 			for i in range(len(X_repurpose)):
@@ -424,11 +429,17 @@ def virtual_screening(X_repurpose, target, model, drug_names = None, target_name
 					  result_folder = "./result/", convert_y = False, output_num_max = 10, verbose = True):
 	# X_repurpose: a list of SMILES string
 	# target: a list of targets
+	if isinstance(target, str):
+		target = [target]
+	
 	fo = os.path.join(result_folder, "virtual_screening.txt")
 	#if not model.binary:
 	#	print_list = []
 	print_list = []
-
+	if drug_names is None:
+		drug_names = ['Drug ' + str(i) for i in list(range(len(X_repurpose)))]
+	if target_names is None:
+		target_names = ['Target ' + str(i) for i in list(range(len(target)))]   
 	if model.binary:
 		table_header = ["Rank", "Drug Name", "Target Name", "Interaction", "Probability"]
 	else:
@@ -451,7 +462,7 @@ def virtual_screening(X_repurpose, target, model, drug_names = None, target_name
 				print('Virtual Screening Result')
 			f_d = max([len(o) for o in drug_names]) + 1
 			f_p = max([len(o) for o in target_names]) + 1
-			for i in range(target.shape[0]):
+			for i in range(len(target)):
 				if model.binary:
 					if y_pred[i] > 0.5:
 						string_lst = [drug_names[i], target_names[i], "YES", "{0:.2f}".format(y_pred[i])]						
@@ -590,7 +601,7 @@ class DBTA:
 				pr_auc_file = os.path.join(self.result_folder, "pr-auc.jpg")
 				prauc_curve(y_pred, y_label, pr_auc_file, self.drug_encoding + '_' + self.target_encoding)
 
-			return roc_auc_score(y_label, y_pred), average_precision_score(y_label, y_pred), f1_score(y_label, outputs), y_pred
+			return roc_auc_score(y_label, y_pred), average_precision_score(y_label, y_pred), f1_score(y_label, outputs), log_loss(y_label, outputs), y_pred
 		else:
 			if repurposing_mode:
 				return y_pred
@@ -710,8 +721,8 @@ class DBTA:
 			##### validate, select the best model up to now 
 			with torch.set_grad_enabled(False):
 				if self.binary:  
-					## binary: ROC-AUC, PR-AUC, F1  
-					auc, auprc, f1, logits = self.test_(validation_generator, self.model)
+					## binary: ROC-AUC, PR-AUC, F1, cross-entropy loss
+					auc, auprc, f1, loss, logits = self.test_(validation_generator, self.model)
 					lst = ["epoch " + str(epo)] + list(map(float2str,[auc, auprc, f1]))
 					valid_metric_record.append(lst)
 					if auc > max_auc:
@@ -719,7 +730,8 @@ class DBTA:
 						max_auc = auc   
 					if verbose:
 						print('Validation at Epoch '+ str(epo + 1) + ' , AUROC: ' + str(auc)[:7] + \
-						  ' , AUPRC: ' + str(auprc)[:7] + ' , F1: '+str(f1)[:7])
+						  ' , AUPRC: ' + str(auprc)[:7] + ' , F1: '+str(f1)[:7] + ' , Cross-entropy Loss: ' + \
+						  str(loss)[:7])
 				else:  
 					### regression: MSE, Pearson Correlation, with p-value, Concordance Index  
 					mse, r2, p_val, CI, logits = self.test_(validation_generator, self.model)
@@ -746,11 +758,13 @@ class DBTA:
 			if verbose:
 				print('--- Go for Testing ---')
 			if self.binary:
-				auc, auprc, f1, logits = self.test_(testing_generator, model_max, test = True)
+				auc, auprc, f1, loss, logits = self.test_(testing_generator, model_max, test = True)
 				test_table = PrettyTable(["AUROC", "AUPRC", "F1"])
 				test_table.add_row(list(map(float2str, [auc, auprc, f1])))
 				if verbose:
-					print('Testing AUROC: ' + str(auc) + ' , AUPRC: ' + str(auprc) + ' , F1: '+str(f1))				
+					print('Validation at Epoch '+ str(epo + 1) + ' , AUROC: ' + str(auc)[:7] + \
+					  ' , AUPRC: ' + str(auprc)[:7] + ' , F1: '+str(f1)[:7] + ' , Cross-entropy Loss: ' + \
+					  str(loss)[:7])				
 			else:
 				mse, r2, p_val, CI, logits = self.test_(testing_generator, model_max)
 				test_table = PrettyTable(["MSE", "Pearson Correlation", "with p-value", "Concordance Index"])
