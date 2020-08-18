@@ -191,24 +191,24 @@ class CNN_RNN(nn.Sequential):
 		if self.encoding == 'protein':
 			if self.config['rnn_Use_GRU_LSTM_target'] == 'LSTM':
 				direction = 2 if self.config['rnn_target_bidirectional'] else 1
-				h0 = torch.randn(self.config['rnn_target_n_layers'] * direction, batch_size, self.config['rnn_target_hid_dim']).to(device)
-				c0 = torch.randn(self.config['rnn_target_n_layers'] * direction, batch_size, self.config['rnn_target_hid_dim']).to(device)
+				h0 = torch.randn(self.config['rnn_target_n_layers'] * direction, batch_size, self.config['rnn_target_hid_dim'])#.to(device)
+				c0 = torch.randn(self.config['rnn_target_n_layers'] * direction, batch_size, self.config['rnn_target_hid_dim'])#.to(device)
 				v, (hn, cn) = self.rnn(v.double(), (h0.double(), c0.double()))
 			else:
 				# GRU
 				direction = 2 if self.config['rnn_target_bidirectional'] else 1
-				h0 = torch.randn(self.config['rnn_target_n_layers'] * direction, batch_size, self.config['rnn_target_hid_dim']).to(device)
+				h0 = torch.randn(self.config['rnn_target_n_layers'] * direction, batch_size, self.config['rnn_target_hid_dim'])#.to(device)
 				v, hn = self.rnn(v.double(), h0.double())
 		else:
 			if self.config['rnn_Use_GRU_LSTM_drug'] == 'LSTM':
 				direction = 2 if self.config['rnn_drug_bidirectional'] else 1
-				h0 = torch.randn(self.config['rnn_drug_n_layers'] * direction, batch_size, self.config['rnn_drug_hid_dim']).to(device)
-				c0 = torch.randn(self.config['rnn_drug_n_layers'] * direction, batch_size, self.config['rnn_drug_hid_dim']).to(device)
+				h0 = torch.randn(self.config['rnn_drug_n_layers'] * direction, batch_size, self.config['rnn_drug_hid_dim'])#.to(device)
+				c0 = torch.randn(self.config['rnn_drug_n_layers'] * direction, batch_size, self.config['rnn_drug_hid_dim'])#.to(device)
 				v, (hn, cn) = self.rnn(v.double(), (h0.double(), c0.double()))
 			else:
 				# GRU
 				direction = 2 if self.config['rnn_drug_bidirectional'] else 1
-				h0 = torch.randn(self.config['rnn_drug_n_layers'] * direction, batch_size, self.config['rnn_drug_hid_dim']).to(device)
+				h0 = torch.randn(self.config['rnn_drug_n_layers'] * direction, batch_size, self.config['rnn_drug_hid_dim'])#.to(device)
 				v, hn = self.rnn(v.double(), h0.double())
 		v = torch.flatten(v, 1)
 		v = self.fc1(v.float())
@@ -231,7 +231,7 @@ class MLP(nn.Sequential):
 
 	def forward(self, v):
 		# predict
-		v = v.float().to(device)
+		v = v.float()#.to(device)
 		for i, l in enumerate(self.predictor):
 			v = F.relu(l(v))
 		return v  
@@ -268,14 +268,14 @@ class MPNN(nn.Sequential):
 			n_b = atoms_bonds[i,1].item()
 			if (n_a == 0):
 				embed = create_var(torch.zeros(1, self.mpnn_hidden_size))
-				embeddings.append(embed.to(device))
+				embeddings.append(embed) #.to(device)
 				continue 
-			sub_fatoms = fatoms[N_atoms:N_atoms+n_a,:].to(device)
-			sub_fbonds = fbonds[N_bonds:N_bonds+n_b,:].to(device)
-			sub_agraph = agraph[N_atoms:N_atoms+n_a,:].to(device)
-			sub_bgraph = bgraph[N_bonds:N_bonds+n_b,:].to(device)
+			sub_fatoms = fatoms[N_atoms:N_atoms+n_a,:]#.to(device)
+			sub_fbonds = fbonds[N_bonds:N_bonds+n_b,:]#.to(device)
+			sub_agraph = agraph[N_atoms:N_atoms+n_a,:]#.to(device)
+			sub_bgraph = bgraph[N_bonds:N_bonds+n_b,:]#.to(device)
 			embed = self.single_molecule_forward(sub_fatoms, sub_fbonds, sub_agraph, sub_bgraph)
-			embed = embed.to(device)            
+			# embed = embed.to(device)
 			embeddings.append(embed)
 			N_atoms += n_a
 			N_bonds += n_b
@@ -313,7 +313,7 @@ class MPNN(nn.Sequential):
 		nei_message = nei_message.sum(dim=1)
 		ainput = torch.cat([fatoms, nei_message], dim=1)
 		atom_hiddens = F.relu(self.W_o(ainput))
-		return torch.mean(atom_hiddens, 0).view(1,-1).to(device)
+		return torch.mean(atom_hiddens, 0).view(1,-1)#.to(device)
 
 class Classifier(nn.Sequential):
 	def __init__(self, model_drug, model_protein, **config):
@@ -573,11 +573,11 @@ class DBTA:
 			if self.drug_encoding == "MPNN" or self.drug_encoding == 'Transformer':
 				v_d = v_d
 			else:
-				v_d = v_d.float().to(self.device)                
+				v_d = v_d.float()#.to(self.device)
 			if self.target_encoding == 'Transformer':
 				v_p = v_p
 			else:
-				v_p = v_p.float().to(self.device)                
+				v_p = v_p.float()#.to(self.device)
 			score = self.model(v_d, v_p)
 			if self.binary:
 				m = torch.nn.Sigmoid()
@@ -622,13 +622,13 @@ class DBTA:
 			test_every_X_epoch = 40
 		loss_history = []
 
-		self.model = self.model.to(self.device)
+		self.model = self.model#.to(self.device)
 
 		# support multiple GPUs
 		if torch.cuda.device_count() > 1:
 			if verbose:
 				print("Let's use " + str(torch.cuda.device_count()) + " GPUs!")
-			self.model = nn.DataParallel(self.model, dim = 0)
+			self.model = nn.DataParallel(self.model, dim=0)
 		elif torch.cuda.device_count() == 1:
 			if verbose:
 				print("Let's use " + str(torch.cuda.device_count()) + " GPU!")
@@ -636,7 +636,7 @@ class DBTA:
 			if verbose:
 				print("Let's use CPU/s!")
 		# Future TODO: support multiple optimizers with parameters
-		opt = torch.optim.Adam(self.model.parameters(), lr = lr, weight_decay = decay)
+		opt = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay = decay)
 		if verbose:
 			print('--- Data Preparation ---')
 
@@ -685,15 +685,15 @@ class DBTA:
 				if self.target_encoding == 'Transformer':
 					v_p = v_p
 				else:
-					v_p = v_p.float().to(self.device) 
+					v_p = v_p.float()#.to(self.device)
 				if self.drug_encoding == "MPNN" or self.drug_encoding == 'Transformer':
 					v_d = v_d
 				else:
-					v_d = v_d.float().to(self.device)                
-					#score = self.model(v_d, v_p.float().to(self.device))
+					v_d = v_d.float()#.to(self.device)
+					score = self.model(v_d, v_p.float())#.to(self.device))
                
 				score = self.model(v_d, v_p)
-				label = Variable(torch.from_numpy(np.array(label)).float()).to(self.device)
+				label = Variable(torch.from_numpy(np.array(label)).float())#.to(self.device)
 
 				if self.binary:
 					loss_fct = torch.nn.BCELoss()
@@ -806,7 +806,7 @@ class DBTA:
 		'''
 		print('predicting...')
 		info = data_process_loader(df_data.index.values, df_data.Label.values, df_data, **self.config)
-		self.model.to(device)
+		self.model#.to(device)
 		params = {'batch_size': self.config['batch_size'],
 				'shuffle': False,
 				'num_workers': self.config['num_workers'],
