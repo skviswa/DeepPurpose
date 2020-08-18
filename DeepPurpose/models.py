@@ -24,7 +24,7 @@ import os
 from DeepPurpose.utils import *
 from DeepPurpose.model_helper import Encoder_MultipleLayers, Embeddings    
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class transformer(nn.Sequential):
 	def __init__(self, encoding, **config):
@@ -48,8 +48,8 @@ class transformer(nn.Sequential):
 
 	### parameter v (tuple of length 2) is from utils.drug2emb_encoder 
 	def forward(self, v):
-		e = v[0].long().to(device)
-		e_mask = v[1].long().to(device)
+		e = v[0].long()#.to(device)
+		e_mask = v[1].long()#.to(device)
 		ex_e_mask = e_mask.unsqueeze(1).unsqueeze(2)
 		ex_e_mask = (1.0 - ex_e_mask) * -10000.0
 
