@@ -134,9 +134,9 @@ class CNN_RNN(nn.Sequential):
 								bidirectional = config['rnn_drug_bidirectional'])
 			else:
 				raise AttributeError('Please use LSTM or GRU.')
-			direction = 2 if config['rnn_drug_bidirectional'] else 1
+			self.drug_direction = 2 if config['rnn_drug_bidirectional'] else 1
 			self.rnn = self.rnn.double()
-			self.fc1 = nn.Linear(config['rnn_drug_hid_dim'] * direction * n_size_d, config['hidden_dim_drug'])
+			self.fc1 = nn.Linear(config['rnn_drug_hid_dim'] *self.drug_direction * n_size_d, config['hidden_dim_drug'])
 
 		if encoding == 'protein':
 			in_ch = [26] + config['cnn_target_filters']
@@ -164,9 +164,9 @@ class CNN_RNN(nn.Sequential):
 								bidirectional = config['rnn_target_bidirectional'])
 			else:
 				raise AttributeError('Please use LSTM or GRU.')
-			direction = 2 if config['rnn_target_bidirectional'] else 1
+			self.target_direction = 2 if config['rnn_target_bidirectional'] else 1
 			self.rnn = self.rnn.double()
-			self.fc1 = nn.Linear(config['rnn_target_hid_dim'] * direction * n_size_p, config['hidden_dim_protein'])
+			self.fc1 = nn.Linear(config['rnn_target_hid_dim'] * self.target_direction * n_size_p, config['hidden_dim_protein'])
 		self.encoding = encoding
 		self.config = config
 
@@ -182,34 +182,50 @@ class CNN_RNN(nn.Sequential):
 			x = F.relu(l(x))
 		return x
 
+	def init_hidden(self, batch_size: int):
+		"""
+        This function initializes the hidden states for RNN components
+        :param batch_size: The batch size of the
+        :return: The hidden states, based on LSTM or GRU
+		"""
+		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+		if self.encoding == 'protein':
+			if self.config['rnn_Use_GRU_LSTM_target'] == 'LSTM':
+				h_0 = torch.randn(self.config['rnn_target_n_layers'] * self.target_direction, batch_size,
+								 self.config['rnn_target_hid_dim'])  # .to(device)
+				c_0 = torch.randn(self.config['rnn_target_n_layers'] * self.target_direction, batch_size,
+								 self.config['rnn_target_hid_dim'])  # .to(device)
+				return h_0.to(device), c_0.to(device)
+			else:
+				# GRU
+				h_0 = torch.randn(self.config['rnn_target_n_layers'] * self.target_direction, batch_size,
+								 self.config['rnn_target_hid_dim'])  # .to(device)
+				return h_0.to(device)
+		else:
+			if self.config['rnn_Use_GRU_LSTM_drug'] == 'LSTM':
+				h_0 = torch.randn(self.config['rnn_drug_n_layers'] * self.drug_direction, batch_size,
+								 self.config['rnn_drug_hid_dim'])  # .to(device)
+				c_0 = torch.randn(self.config['rnn_drug_n_layers'] * self.drug_direction, batch_size,
+								 self.config['rnn_drug_hid_dim'])  # .to(device)
+				return h_0.to(device), c_0.to(device)
+			else:
+				# GRU
+				h_0 = torch.randn(self.config['rnn_drug_n_layers'] * self.drug_direction, batch_size,
+								 self.config['rnn_drug_hid_dim'])  # .to(device)
+				return h_0.to(device)
+
 	def forward(self, v):
 		for l in self.conv:
 			v = F.relu(l(v.double()))
 		batch_size = v.size(0)
 		v = v.view(v.size(0), v.size(2), -1)
-
-		if self.encoding == 'protein':
-			if self.config['rnn_Use_GRU_LSTM_target'] == 'LSTM':
-				direction = 2 if self.config['rnn_target_bidirectional'] else 1
-				h0 = torch.randn(self.config['rnn_target_n_layers'] * direction, batch_size, self.config['rnn_target_hid_dim'])#.to(device)
-				c0 = torch.randn(self.config['rnn_target_n_layers'] * direction, batch_size, self.config['rnn_target_hid_dim'])#.to(device)
-				v, (hn, cn) = self.rnn(v.double(), (h0.double(), c0.double()))
-			else:
-				# GRU
-				direction = 2 if self.config['rnn_target_bidirectional'] else 1
-				h0 = torch.randn(self.config['rnn_target_n_layers'] * direction, batch_size, self.config['rnn_target_hid_dim'])#.to(device)
-				v, hn = self.rnn(v.double(), h0.double())
+		if self.config['rnn_Use_GRU_LSTM_target'] == 'LSTM':
+			h0, c0 = self.init_hidden(batch_size)
+			v, (hn, cn) = self.rnn(v.double(), (h0.double(), c0.double()))
 		else:
-			if self.config['rnn_Use_GRU_LSTM_drug'] == 'LSTM':
-				direction = 2 if self.config['rnn_drug_bidirectional'] else 1
-				h0 = torch.randn(self.config['rnn_drug_n_layers'] * direction, batch_size, self.config['rnn_drug_hid_dim'])#.to(device)
-				c0 = torch.randn(self.config['rnn_drug_n_layers'] * direction, batch_size, self.config['rnn_drug_hid_dim'])#.to(device)
-				v, (hn, cn) = self.rnn(v.double(), (h0.double(), c0.double()))
-			else:
-				# GRU
-				direction = 2 if self.config['rnn_drug_bidirectional'] else 1
-				h0 = torch.randn(self.config['rnn_drug_n_layers'] * direction, batch_size, self.config['rnn_drug_hid_dim'])#.to(device)
-				v, hn = self.rnn(v.double(), h0.double())
+			# GRU
+			h0 = self.init_hidden(batch_size)
+			v, hn = self.rnn(v.double(), h0.double())
 		v = torch.flatten(v, 1)
 		v = self.fc1(v.float())
 		return v
