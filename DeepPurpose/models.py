@@ -29,6 +29,7 @@ from DeepPurpose.model_helper import Encoder_MultipleLayers, Embeddings
 class transformer(nn.Sequential):
 	def __init__(self, encoding, **config):
 		super(transformer, self).__init__()
+		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 		if encoding == 'drug':
 			self.emb = Embeddings(config['input_dim_drug'], config['transformer_emb_size_drug'], 50, config['transformer_dropout_rate'])
 			self.encoder = Encoder_MultipleLayers(config['transformer_n_layer_drug'], 
@@ -48,8 +49,8 @@ class transformer(nn.Sequential):
 
 	### parameter v (tuple of length 2) is from utils.drug2emb_encoder 
 	def forward(self, v):
-		e = v[0].long()#.to(device)
-		e_mask = v[1].long()#.to(device)
+		e = v[0].long().to(self.device)
+		e_mask = v[1].long().to(self.device)
 		ex_e_mask = e_mask.unsqueeze(1).unsqueeze(2)
 		ex_e_mask = (1.0 - ex_e_mask) * -10000.0
 
@@ -192,26 +193,26 @@ class CNN_RNN(nn.Sequential):
 		if self.encoding == 'protein':
 			if self.config['rnn_Use_GRU_LSTM_target'] == 'LSTM':
 				h_0 = torch.randn(self.config['rnn_target_n_layers'] * self.target_direction, batch_size,
-								 self.config['rnn_target_hid_dim'])  # .to(device)
+								 self.config['rnn_target_hid_dim'])
 				c_0 = torch.randn(self.config['rnn_target_n_layers'] * self.target_direction, batch_size,
-								 self.config['rnn_target_hid_dim'])  # .to(device)
+								 self.config['rnn_target_hid_dim'])
 				return h_0.to(device), c_0.to(device)
 			else:
 				# GRU
 				h_0 = torch.randn(self.config['rnn_target_n_layers'] * self.target_direction, batch_size,
-								 self.config['rnn_target_hid_dim'])  # .to(device)
+								 self.config['rnn_target_hid_dim'])
 				return h_0.to(device)
 		else:
 			if self.config['rnn_Use_GRU_LSTM_drug'] == 'LSTM':
 				h_0 = torch.randn(self.config['rnn_drug_n_layers'] * self.drug_direction, batch_size,
-								 self.config['rnn_drug_hid_dim'])  # .to(device)
+								 self.config['rnn_drug_hid_dim'])
 				c_0 = torch.randn(self.config['rnn_drug_n_layers'] * self.drug_direction, batch_size,
-								 self.config['rnn_drug_hid_dim'])  # .to(device)
+								 self.config['rnn_drug_hid_dim'])
 				return h_0.to(device), c_0.to(device)
 			else:
 				# GRU
 				h_0 = torch.randn(self.config['rnn_drug_n_layers'] * self.drug_direction, batch_size,
-								 self.config['rnn_drug_hid_dim'])  # .to(device)
+								 self.config['rnn_drug_hid_dim'])
 				return h_0.to(device)
 
 	def forward(self, v):
@@ -219,7 +220,13 @@ class CNN_RNN(nn.Sequential):
 			v = F.relu(l(v.double()))
 		batch_size = v.size(0)
 		v = v.view(v.size(0), v.size(2), -1)
-		if self.config['rnn_Use_GRU_LSTM_target'] == 'LSTM':
+		rnn_layer = 'GRU'
+		if 'rnn_Use_GRU_LSTM_target' in self.config.keys():
+			rnn_layer = self.config['rnn_Use_GRU_LSTM_target']
+		elif 'rnn_Use_GRU_LSTM_drug' in self.config.keys():
+			rnn_layer = self.config['rnn_Use_GRU_LSTM_drug']
+
+		if rnn_layer == 'LSTM':
 			h0, c0 = self.init_hidden(batch_size)
 			v, (hn, cn) = self.rnn(v.double(), (h0.double(), c0.double()))
 		else:
@@ -244,10 +251,11 @@ class MLP(nn.Sequential):
 		dims = [input_dim] + hidden_dims_lst + [output_dim]
 
 		self.predictor = nn.ModuleList([nn.Linear(dims[i], dims[i+1]) for i in range(layer_size)])
+		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 	def forward(self, v):
 		# predict
-		v = v.float()#.to(device)
+		v = v.float().to(self.device)
 		for i, l in enumerate(self.predictor):
 			v = F.relu(l(v))
 		return v  
@@ -263,7 +271,7 @@ class MPNN(nn.Sequential):
 		self.W_i = nn.Linear(ATOM_FDIM + BOND_FDIM, self.mpnn_hidden_size, bias=False)
 		self.W_h = nn.Linear(self.mpnn_hidden_size, self.mpnn_hidden_size, bias=False)
 		self.W_o = nn.Linear(ATOM_FDIM + self.mpnn_hidden_size, self.mpnn_hidden_size)
-
+		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	
 	### first version, forward single molecule sequentially. 
 	def forward(self, feature):
@@ -284,14 +292,14 @@ class MPNN(nn.Sequential):
 			n_b = atoms_bonds[i,1].item()
 			if (n_a == 0):
 				embed = create_var(torch.zeros(1, self.mpnn_hidden_size))
-				embeddings.append(embed) #.to(device)
+				embeddings.append(embed).to(self.device)
 				continue 
-			sub_fatoms = fatoms[N_atoms:N_atoms+n_a,:]#.to(device)
-			sub_fbonds = fbonds[N_bonds:N_bonds+n_b,:]#.to(device)
-			sub_agraph = agraph[N_atoms:N_atoms+n_a,:]#.to(device)
-			sub_bgraph = bgraph[N_bonds:N_bonds+n_b,:]#.to(device)
+			sub_fatoms = fatoms[N_atoms:N_atoms+n_a,:].to(self.device)
+			sub_fbonds = fbonds[N_bonds:N_bonds+n_b,:].to(self.device)
+			sub_agraph = agraph[N_atoms:N_atoms+n_a,:].to(self.device)
+			sub_bgraph = bgraph[N_bonds:N_bonds+n_b,:].to(self.device)
 			embed = self.single_molecule_forward(sub_fatoms, sub_fbonds, sub_agraph, sub_bgraph)
-			# embed = embed.to(device)
+			embed = embed.to(self.device)
 			embeddings.append(embed)
 			N_atoms += n_a
 			N_bonds += n_b
@@ -329,7 +337,7 @@ class MPNN(nn.Sequential):
 		nei_message = nei_message.sum(dim=1)
 		ainput = torch.cat([fatoms, nei_message], dim=1)
 		atom_hiddens = F.relu(self.W_o(ainput))
-		return torch.mean(atom_hiddens, 0).view(1,-1)#.to(device)
+		return torch.mean(atom_hiddens, 0).view(1,-1).to(self.device)
 
 class Classifier(nn.Sequential):
 	def __init__(self, model_drug, model_protein, **config):
