@@ -27,7 +27,7 @@ import pathlib
 
 this_dir = str(pathlib.Path(__file__).parent.absolute())
 
-MAX_ATOM = 400
+MAX_ATOM = 700
 MAX_BOND = MAX_ATOM * 2
 
 # ESPF encoding
