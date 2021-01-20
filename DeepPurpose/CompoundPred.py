@@ -3,7 +3,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 from torch.utils import data
 from torch.utils.data import SequentialSampler
-from torch import nn 
+from torch import nn
 
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -13,17 +13,18 @@ from time import time
 from sklearn.metrics import mean_squared_error, roc_auc_score, average_precision_score, f1_score
 from lifelines.utils import concordance_index
 from scipy.stats import pearsonr
-import pickle 
-torch.manual_seed(2)    # reproducible torch:2 np:3
+import pickle
+
+torch.manual_seed(2)  # reproducible torch:2 np:3
 np.random.seed(3)
 import copy
 from prettytable import PrettyTable
 import os
 
 from DeepPurpose.utils import *
-from DeepPurpose.model_helper import Encoder_MultipleLayers, Embeddings    
-from DeepPurpose.models import transformer, CNN, CNN_RNN, MLP, MPNN
-
+from DeepPurpose.model_helper import Encoder_MultipleLayers, Embeddings
+# from DeepPurpose.models import transformer, CNN, CNN_RNN, MLP, MPNN
+from DeepPurpose.encoders import *
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -40,8 +41,8 @@ class Classifier(nn.Sequential):
 		self.hidden_dims = config['cls_hidden_dims']
 		layer_size = len(self.hidden_dims) + 1
 		dims = [self.input_dim_drug] + self.hidden_dims + [1]
-		
-		self.predictor = nn.ModuleList([nn.Linear(dims[i], dims[i+1]) for i in range(layer_size)])
+
+		self.predictor = nn.ModuleList([nn.Linear(dims[i], dims[i + 1]) for i in range(layer_size)])
 
 	def forward(self, v_D):
 		# each encoding
@@ -58,13 +59,14 @@ def model_initialize(**config):
 	model = Property_Prediction(**config)
 	return model
 
-def model_pretrained(path_dir = None, model = None):
+
+def model_pretrained(path_dir=None, model=None):
 	if model is not None:
-		path_dir = download_pretrained_model_property(model)
-	config = load_dict(path_dir)
-	model = Property_Prediction(**config)
-	model.load_pretrained(path_dir + '/model.pt')    
-	return model
+		path_dir = download_pretrained_model(model)
+		config = load_dict(path_dir)
+		model = Property_Prediction(**config)
+		model.load_pretrained(path_dir + '/model.pt')
+		return model
 
 def repurpose(X_repurpose, model, drug_names = None, 
 			  result_folder = "./result/", convert_y = False, output_num_max = 10, verbose = True):
@@ -109,13 +111,13 @@ def repurpose(X_repurpose, model, drug_names = None,
 				print_list.append((string_lst, y_pred[i]))
 		
 		if convert_y:
-			print_list.sort(key = lambda x:x[1])
+			print_list.sort(key=lambda x: x[1])
 		else:
-			print_list.sort(key = lambda x:x[1], reverse = True)
+			print_list.sort(key=lambda x: x[1], reverse=True)
 
 		print_list = [i[0] for i in print_list]
 		for idx, lst in enumerate(print_list):
-			lst = [str(idx + 1)] + lst 
+			lst = [str(idx + 1)] + lst
 			table.add_row(lst)
 		fout.write(table.get_string())
 	if verbose:
@@ -123,41 +125,63 @@ def repurpose(X_repurpose, model, drug_names = None,
 			lines = fin.readlines()
 			for idx, line in enumerate(lines):
 				if idx < 13:
-					print(line, end = '')
+					print(line, end='')
 				else:
 					print('checkout ' + fo + ' for the whole list')
 					break
-	return y_pred
-  
-def mpnn_feature_collate_func(x): 
-	## first version 
-	return [torch.cat([x[j][i] for j in range(len(x))], 0) for i in range(len(x[0]))]
 
-def mpnn_collate_func(x):
-	#print("len(x) is ", len(x)) ## batch_size == 128 
-	#print("len(x[0]) is ", len(x[0])) ## 3--- data_process_loader_Property_Prediction.__getitem__ 
-	#print("len(x[1]) is ", len(x[1])) ## 3--- data_process_loader_Property_Prediction.__getitem__ 
-	#print("len(x[2]) is ", len(x[2])) ## 3--- data_process_loader_Property_Prediction.__getitem__ 
 
-	mpnn_feature = [i[0] for i in x]
-	#print("len(mpnn_feature)", len(mpnn_feature), "len(mpnn_feature[0])", len(mpnn_feature[0]))
-	mpnn_feature = mpnn_feature_collate_func(mpnn_feature)
-	from torch.utils.data.dataloader import default_collate
-	x_remain = [[i[1]] for i in x]
-	x_remain_collated = default_collate(x_remain)
-	return [mpnn_feature] + x_remain_collated
-## used in dataloader 
+return y_pred
+
+
+# def mpnn_feature_collate_func(x): 
+# 	## first version 
+# 	return [torch.cat([x[j][i] for j in range(len(x))], 0) for i in range(len(x[0]))]
+
+
+# def mpnn_feature_collate_func(x):
+# 	assert len(x[0]) == 5
+# 	N_atoms_N_bonds = [i[-1] for i in x]
+# 	N_atoms_scope = []
+# 	f_a = torch.cat([x[j][0] for j in range(len(x))], 0)
+# 	f_b = torch.cat([x[j][1] for j in range(len(x))], 0)
+# 	agraph_lst, bgraph_lst = [], []
+# 	Na, Nb = 0, 0
+# 	for j in range(len(x)):
+# 		agraph_lst.append(x[j][2] + Na)
+# 		bgraph_lst.append(x[j][3] + Nb)
+# 		N_atoms_scope.append([Na, x[j][2].shape[0]])
+# 		Na += x[j][2].shape[0]
+# 		Nb += x[j][3].shape[0]
+# 	agraph = torch.cat(agraph_lst, 0)
+# 	bgraph = torch.cat(bgraph_lst, 0)
+# 	return [f_a, f_b, agraph, bgraph, N_atoms_scope]
+
+# def mpnn_collate_func(x):
+# 	#print("len(x) is ", len(x)) ## batch_size == 128 
+# 	#print("len(x[0]) is ", len(x[0])) ## 3--- data_process_loader_Property_Prediction.__getitem__ 
+# 	#print("len(x[1]) is ", len(x[1])) ## 3--- data_process_loader_Property_Prediction.__getitem__ 
+# 	#print("len(x[2]) is ", len(x[2])) ## 3--- data_process_loader_Property_Prediction.__getitem__ 
+
+# 	mpnn_feature = [i[0] for i in x]
+# 	#print("len(mpnn_feature)", len(mpnn_feature), "len(mpnn_feature[0])", len(mpnn_feature[0]))
+# 	mpnn_feature = mpnn_feature_collate_func(mpnn_feature)
+# 	from torch.utils.data.dataloader import default_collate
+# 	x_remain = [[i[1]] for i in x]
+# 	x_remain_collated = default_collate(x_remain)
+# 	return [mpnn_feature] + x_remain_collated
+# ## used in dataloader 
 
 class Property_Prediction:
 	'''
-		Drug Property Prediction 
-	'''
+        Drug Property Prediction
+    '''
 
 	def __init__(self, **config):
 		drug_encoding = config['drug_encoding']
 
-		if drug_encoding == 'Morgan' or drug_encoding=='Pubchem' or drug_encoding=='Daylight' or drug_encoding=='rdkit_2d_normalized':
-			# Future TODO: support multiple encoding scheme for static input 
+		if drug_encoding == 'Morgan' or drug_encoding == 'ErG' or drug_encoding == 'Pubchem' or drug_encoding == 'Daylight' or drug_encoding == 'rdkit_2d_normalized' or drug_encoding == 'ESPF':
+			# Future TODO: support multiple encoding scheme for static input
 			self.model_drug = MLP(config['input_dim_drug'], config['hidden_dim_drug'], config['mlp_hidden_dims_drug'])
 		elif drug_encoding == 'CNN':
 			self.model_drug = CNN('drug', **config)
@@ -167,13 +191,13 @@ class Property_Prediction:
 			self.model_drug = transformer('drug', **config)
 		elif drug_encoding == 'MPNN':
 			self.model_drug = MPNN(config['hidden_dim_drug'], config['mpnn_depth'])
-		else:
+			else:
 			raise AttributeError('Please use one of the available encoding method.')
 
 		self.model = Classifier(self.model_drug, **config)
 		self.config = config
 		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-		
+
 		self.drug_encoding = drug_encoding
 		self.result_folder = config['result_folder']
 		if not os.path.exists(self.result_folder):

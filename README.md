@@ -2,29 +2,40 @@
 
 
 <h3 align="center">
-<p> A Drug-Target Interaction & Property Prediction Toolkit <br> with state-of-the-art Deep Learning Methods </br></h3>
+<p> A Deep Learning Library for Compound and Protein Modeling <br>DTI, Drug Property, PPI, DDI, Protein Function Prediction<br></h3>
 <h4 align="center">
-<p> and its Applications in Drug Repurposing, Virtual Screening, QSAR and More </h4>
+<p> Applications in Drug Repurposing, Virtual Screening, QSAR, Side Effect Prediction and More </h4>
 
 ---
 
-This repository hosts DeepPurpose, a Deep Learning Based Drug-Target Interaction and Property Prediction Toolkit with Applications in Drug Repurposing and Virtual Screening, QSAR and more molecular modeling tasks (using PyTorch). It allows very easy usage (only one line of code!) for non-computational domain researchers to be able to obtain a list of potential drugs using deep learning while facilitating deep learning method research in this topic by providing a flexible framework (less than 10 lines of codes!) and baselines. 
+[![PyPI version](https://badge.fury.io/py/DeepPurpose.svg)](https://pypi.org/project/DeepPurpose/)
+[![Downloads](https://pepy.tech/badge/deeppurpose/month)](https://pepy.tech/project/deeppurpose)
+[![Downloads](https://pepy.tech/badge/deeppurpose)](https://pepy.tech/project/deeppurpose)
+[![GitHub Repo stars](https://img.shields.io/github/stars/kexinhuang12345/DeepPurpose)](https://github.com/kexinhuang12345/DeepPurpose/stargazers)
+[![GitHub Repo forks](https://img.shields.io/github/forks/kexinhuang12345/DeepPurpose)](https://github.com/kexinhuang12345/DeepPurpose/network/members)
+
+This repository hosts DeepPurpose, a Deep Learning Based Molecular Modeling and Prediction Toolkit on Drug-Target Interaction Prediction, Compound Property Prediction, Protein-Protein Interaction Prediction, and Protein Function prediction (using PyTorch). We focus on DTI and its applications in Drug Repurposing and Virtual Screening, but support various other molecular encoding tasks. It allows very easy usage (several lines of codes only) to facilitate deep learning for life science research. 
 
 ### News!
+- [12/20] DeepPurpose is now supported by TDC data loader, which contains a large collection of ML for therapeutics datasets, including many drug property, DTI datasets. Here is a [tutorial](https://github.com/mims-harvard/TDC/blob/master/tutorials/TDC_104_ML_Model_DeepPurpose.ipynb)!
+- [12/20] DeepPurpose can now be installed via `pip`!
+- [11/20] DeepPurpose is published in [Bioinformatics](https://doi.org/10.1093/bioinformatics/btaa1005)!
+- [11/20] Added 5 more pretrained models on BindingDB IC50 Units (around 1Million data points). 
+- [10/20] Google Colab Installation Instructions are provided [here](https://colab.research.google.com/drive/1eF60BwGX6PnB91vpx5dRxFa72e6-MYuZ?usp=sharing). Thanks to @hima111997 ! 
+- [10/20] Using DeepPurpose, we made a humans-in-the-loop molecular design web UI interface, check it out! \[[Website](http://deeppurpose.sunlab.org/), [paper](https://arxiv.org/abs/2010.03951)\]
+- [09/20] DeepPurpose has now supported three more tasks: DDI, PPI and Protein Function Prediction! You can simply call `from DeepPurpose import DDI/PPI/ProteinPred` to use, checkout examples below!
 - [07/20] A simple web UI for DTI prediction can be created under 10 lines using [Gradio](https://github.com/gradio-app/gradio)! A demo is provided [here](https://github.com/kexinhuang12345/DeepPurpose/blob/master/DEMO/web_ui_gradio.ipynb).
 - [07/20] A [blog](https://towardsdatascience.com/drug-discovery-with-deep-learning-under-10-lines-of-codes-742ee306732a) is posted on the Towards Data Science Medium column, check this out!
 - [07/20] Two tutorials are online to go through DeepPurpose's framework to do drug-target interaction prediction and drug property prediction ([DTI](Tutorial_1_DTI_Prediction.ipynb), [Drug Property](Tutorial_2_Drug_Property_Pred_Assay_Data.ipynb)). 
 - [05/20] Support drug property prediction for screening data that does not have target proteins such as bacteria! An example using RDKit2D with DNN for training and repurposing for pseudomonas aeruginosa (MIT AI Cures's [open task](https://www.aicures.mit.edu/data)) is provided as a [demo](DEMO/Drug_Property_Prediction_Bacterial_Activity-RDKit2D_MIT_AiCures.ipynb).
-
 - [05/20] Now supports hyperparameter tuning via Bayesian Optimization through the [Ax platform](https://ax.dev/)! A demo is provided in [here](DEMO/Drug_Property_Pred-Ax-Hyperparam-Tune.ipynb). 
 
 ### Features
 
-- For non-computational researchers, ONE line of code from raw data to output drug repurposing/virtual screening result, aiming to allow wet-lab biochemists to leverage the power of deep learning. The result is ensembled from five pretrained deep learning models!
-
-- For computational researchers, 15+ powerful encodings for drugs and proteins, ranging from deep neural network on classic cheminformatics fingerprints, CNN, transformers to message passing graph neural network, with 50+ combined models! Most of the combinations of the encodings are not yet in existing works. All of these under 10 lines but with lots of flexibility! Switching encoding is as simple as changing the encoding names!
+- 15+ powerful encodings for drugs and proteins, ranging from deep neural network on classic cheminformatics fingerprints, CNN, transformers to message passing graph neural network, with 50+ combined models! Most of the combinations of the encodings are not yet in existing works. All of these under 10 lines but with lots of flexibility! Switching encoding is as simple as changing the encoding names!
 
 - Realistic and user-friendly design: 
+	- support DTI, DDI, PPI, molecular property prediction, protein function predictions!
 	- automatic identification to do drug target binding affinity (regression) or drug target interaction prediction (binary) task.
 	- support cold target, cold drug settings for robust model evaluations and support single-target high throughput sequencing assay data setup.
 	- many dataset loading/downloading/unzipping scripts to ease the tedious preprocessing, including antiviral, COVID19 targets, BindingDB, DAVIS, KIBA, ...
@@ -37,17 +48,81 @@ This repository hosts DeepPurpose, a Deep Learning Based Drug-Target Interaction
 	- PyTorch based, support CPU, GPU, Multi-GPUs.
 	
 *NOTE: We are actively looking for constructive advices/user feedbacks/experiences on using DeepPurpose! Please open an issue or [contact us](mailto:kexinhuang@hsph.harvard.edu).*
-	
+
+
+## Cite Us
+
+If you found this package useful, please cite [our paper](https://doi.org/10.1093/bioinformatics/btaa1005):
+```
+@article{huang2020deeppurpose,
+  title={DeepPurpose: A Deep Learning Library for Drug-Target Interaction Prediction},
+  author={Huang, Kexin and Fu, Tianfan and Glass, Lucas M and Zitnik, Marinka and Xiao, Cao and Sun, Jimeng},
+  journal={Bioinformatics},
+  year={2020}
+}
+```
+
+## Installation
+Try it on [Binder](https://mybinder.org)! Binder is a cloud Jupyter Notebook interface that will install our environment dependency for you. 
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/kexinhuang12345/DeepPurpose/master)
+
+[Video tutorial](https://www.youtube.com/watch?v=ghUyZknxq5o) to install Binder.
+
+We recommend to install it locally since Binder needs to be refreshed every time launching. To install locally, we recommend to install from `pip`:
+
+### `pip`
+
+```bash
+conda create -n DeepPurpose python=3.6
+conda activate DeepPurpose
+conda install -c conda-forge rdkit
+conda install -c conda-forge notebook
+pip install git+https://github.com/bp-kelley/descriptastorus 
+pip install DeepPurpose
+```
+
+### Build from Source
+
+First time:
+```bash
+git clone https://github.com/kexinhuang12345/DeepPurpose.git ## Download code repository
+cd DeepPurpose ## Change directory to DeepPurpose
+conda env create -f environment.yml  ## Build virtual environment with all packages installed using conda
+conda activate DeepPurpose ## Activate conda environment (use "source activate DeepPurpose" for anaconda 4.4 or earlier) 
+jupyter notebook ## open the jupyter notebook with the conda env
+
+## run our code, e.g. click a file in the DEMO folder
+... ...
+
+conda deactivate ## when done, exit conda environment 
+```
+
+In the future:
+```bash
+cd DeepPurpose ## Change directory to DeepPurpose
+conda activate DeepPurpose ## Activate conda environment
+jupyter notebook ## open the jupyter notebook with the conda env
+
+## run our code, e.g. click a file in the DEMO folder
+... ...
+
+conda deactivate ## when done, exit conda environment 
+```
+
+[Video tutorial](https://youtu.be/bqinehjnWvE) to install locally from source.
+
 
 ## Example
 
-### Case Study 1: A Framework for Drug Target Interaction Prediction, with less than 10 lines of codes.
+### Case Study 1(a): A Framework for Drug Target Interaction Prediction, with less than 10 lines of codes.
+In addition to the DTI prediction, we also provide repurpose and virtual screening functions to rapidly generation predictions.
 
 <details>
   <summary>Click here for the code!</summary>
 
 ```python
-from DeepPurpose import models
+from DeepPurpose import DTI as models
 from DeepPurpose.utils import *
 from DeepPurpose.dataset import *
 
@@ -96,14 +171,14 @@ _ = models.virtual_screening(X_repurpose, target, net, drug_name, target_name)
 </details>
 
 
-### Case Study 2: A Framework for Drug Property Prediction, with less than 10 lines of codes.
-Many screening dataset is from assay, thus have only drug and its activity score. DeepPurpose also provides a framework for this use case:
+### Case Study 1(b): A Framework for Drug Property Prediction, with less than 10 lines of codes.
+Many dataset is in the form of high throughput screening data, which have only drug and its activity score. It can be formulated as a drug property prediction task. We also provide a repurpose function to predict over large space of drugs. 
 
 <details>
   <summary>Click here for the code!</summary>
 
 ```python
-import DeepPurpose.property_pred as models
+from DeepPurpose import CompoundPred as models
 from DeepPurpose.utils import *
 from DeepPurpose.dataset import *
 
@@ -125,12 +200,119 @@ config = generate_config(drug_encoding = drug_encoding,
 model = models.model_initialize(**config)
 model.train(train, val, test)
 
+X_repurpose, drug_name, drug_cid = load_broad_repurposing_hub(SAVE_PATH)
+
+_ = models.repurpose(X_repurpose, model, drug_name)
+
 ```
 
 </details>
 
-### Case Study 3 (a): Antiviral Drugs Repurposing for SARS-CoV2 3CLPro, using One Line.
-  Given a new target sequence (e.g. SARS-CoV2 3CL Protease), retrieve a list of repurposing drugs from a curated drug library of 81 antiviral drugs. The Binding Score is the Kd values. Results aggregated from five pretrained model on BindingDB dataset!
+### Case Study 1(c): A Framework for Drug-Drug Interaction Prediction, with less than 10 lines of codes.
+DDI is very important for drug safety profiling and the success of clinical trials. This framework predicts interaction based on drug pairs chemical structure.
+
+<details>
+  <summary>Click here for the code!</summary>
+
+```python
+from DeepPurpose import DDI as models
+from DeepPurpose.utils import *
+from DeepPurpose.dataset import *
+
+# load DB Binary Data
+X_drugs, X_drugs_, y = read_file_training_dataset_drug_drug_pairs()
+
+drug_encoding = 'rdkit_2d_normalized'
+train, val, test = data_process(X_drug = X_drugs, X_drug_ = X_drugs_, y = y, 
+			    drug_encoding = drug_encoding,
+			    split_method='random', 
+			    random_seed = 1)
+
+config = generate_config(drug_encoding = drug_encoding, 
+                         cls_hidden_dims = [512], 
+                         train_epoch = 20, 
+                         LR = 0.001, 
+                         batch_size = 128,
+                        )
+
+model = models.model_initialize(**config)
+model.train(train, val, test)
+
+```
+
+</details>
+
+### Case Study 1(d): A Framework for Protein-Protein Interaction Prediction, with less than 10 lines of codes.
+PPI is important to study the relations among targets. 
+
+<details>
+  <summary>Click here for the code!</summary>
+
+```python
+from DeepPurpose import PPI as models
+from DeepPurpose.utils import *
+from DeepPurpose.dataset import *
+
+# load DB Binary Data
+X_targets, X_targets_, y = read_file_training_dataset_protein_proteins_pairs()
+
+target_encoding = 'CNN'
+train, val, test = data_process(X_target = X_targets, X_target_ = X_targets_, y = y, 
+			    target_encoding = target_encoding,
+			    split_method='random', 
+			    random_seed = 1)
+
+config = generate_config(target_encoding = target_encoding, 
+                         cls_hidden_dims = [512], 
+                         train_epoch = 20, 
+                         LR = 0.001, 
+                         batch_size = 128,
+                        )
+
+model = models.model_initialize(**config)
+model.train(train, val, test)
+
+```
+
+</details>
+
+
+### Case Study 1(e): A Framework for Protein Function Prediction, with less than 10 lines of codes.
+Protein function prediction help predict various useful functions such as GO terms, structural classification and etc. Also, for biologics drugs, it is also useful for screening. 
+
+<details>
+  <summary>Click here for the code!</summary>
+
+```python
+from DeepPurpose import ProteinPred as models
+from DeepPurpose.utils import *
+from DeepPurpose.dataset import *
+
+# load DB Binary Data
+X_targets, y = read_file_protein_function()
+
+target_encoding = 'CNN'
+train, val, test = data_process(X_target = X_targets, y = y, 
+			    target_encoding = target_encoding,
+			    split_method='random', 
+			    random_seed = 1)
+
+config = generate_config(target_encoding = target_encoding, 
+                         cls_hidden_dims = [512], 
+                         train_epoch = 20, 
+                         LR = 0.001, 
+                         batch_size = 128,
+                        )
+
+model = models.model_initialize(**config)
+model.train(train, val, test)
+
+```
+
+</details>
+
+### Case Study 2 (a): Antiviral Drugs Repurposing for SARS-CoV2 3CLPro, using One Line.
+  Given a new target sequence (e.g. SARS-CoV2 3CL Protease), retrieve a list of repurposing drugs from a curated drug library of 81 antiviral drugs. The Binding Score is the Kd values. Results aggregated from five pretrained model on BindingDB dataset! (Caution: this currently is for educational purposes. The pretrained DTI models only cover a small dataset and thus cannot generalize to every new unseen protein. For best use case, train your own model with customized data.)
 
 <details>
   <summary>Click here for the code!</summary>
@@ -164,43 +346,8 @@ Drug Repurposing Result for SARS-CoV2 3CL Protease
 
 </details>
 
-### Case Study 3 (b): New Target Repurposing using Broad Drug Repurposing Hub, with One Line.
-Given a new target sequence (e.g. MMP9), retrieve a list of repurposing drugs from Broad Drug Repurposing Hub, which is the default. Results also aggregated from five pretrained model! Note the drug name here is the Pubchem CID since some drug names in Broad is too long.
 
-<details>
-  <summary>Click here for the code!</summary>
-	
-```python
-from DeepPurpose import oneliner
-from DeepPurpose.dataset import *
-oneliner.repurpose(*load_MMP9())
-```
-```
-----output----
-Drug Repurposing Result for MMP9
-+------+-------------+-------------+---------------+
-| Rank |  Drug Name  | Target Name | Binding Score |
-+------+-------------+-------------+---------------+
-|  1   |  6917849.0  |     MMP9    |      5.42     |
-|  2   |   441336.0  |     MMP9    |      6.97     |
-|  3   |   441335.0  |     MMP9    |      8.37     |
-|  4   |   27924.0   |     MMP9    |      9.84     |
-|  5   |   16490.0   |     MMP9    |      9.86     |
-|  6   |  23947600.0 |     MMP9    |     10.11     |
-|  7   |    5743.0   |     MMP9    |     12.44     |
-|  8   |    3288.0   |     MMP9    |     15.91     |
-|  9   | 129009989.0 |     MMP9    |     18.01     |
-|  10  | 129009925.0 |     MMP9    |     23.13     |
-|  11  |  40467076.0 |     MMP9    |     23.48     |
-|  12  |  6917974.0  |     MMP9    |     24.50     |
-|  13  |  73707512.0 |     MMP9    |     26.83     |
-```
-  
-</details>
-
-
-
-### Case Study 4: Repurposing using Customized training data, with One Line.
+### Case Study 2(b): Repurposing using Customized training data, with One Line.
 Given a new target sequence (e.g. SARS-CoV 3CL Pro), training on new data (AID1706 Bioassay), and then retrieve a list of repurposing drugs from a proprietary library (e.g. antiviral drugs). The model can be trained from scratch or finetuned from the pretraining checkpoint!
 
 <details>
@@ -236,80 +383,6 @@ Drug Repurposing Result for SARS-CoV 3CL Protease
 ```
 </details>
 
-## Cite Us
-
-If you found this package useful, please cite [arxiv](https://arxiv.org/abs/2004.08919) for now:
-```
-@article{huang2020deeppurpose,
-  title={DeepPurpose: a Deep Learning Based Drug Repurposing Toolkit},
-  author={Huang, Kexin and Fu, Tianfan and Xiao, Cao and Glass, Lucas and Sun, Jimeng},
-  journal={arXiv preprint arXiv:2004.08919},
-  year={2020}
-}
-
-```
-
-## Install & Usage
-Try it on [Binder](https://mybinder.org)! Binder is a cloud Jupyter Notebook interface that will install our environment dependency for you. 
-
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/kexinhuang12345/DeepPurpose/master)
-
-[Video tutorial](https://www.youtube.com/watch?v=ghUyZknxq5o) to install Binder.
-
-We recommend to install it locally since Binder needs to be refreshed every time launching:
-
-<details>
-  <summary>Click here for the installation instruction!</summary>
-
-First time:
-```bash
-git clone https://github.com/kexinhuang12345/DeepPurpose.git
-## Download code repository
-
-cd DeepPurpose
-## Change directory to DeepPurpose
-
-conda env create -f environment.yml  
-## Build virtual environment with all packages installed using conda
-
-conda activate DeepPurpose
-## Activate conda environment (use "source activate DeepPurpose" for anaconda 4.4 or earlier) 
-
-jupyter notebook
-## open the jupyter notebook with the conda env
-
-## run our code, e.g. click a file in the DEMO folder
-... ...
-
-conda deactivate 
-## when done, exit conda environment 
-```
-
-In the future:
-```bash
-cd DeepPurpose
-## Change directory to DeepPurpose
-
-conda activate DeepPurpose
-## Activate conda environment
-
-jupyter notebook
-## open the jupyter notebook with the conda env
-
-## run our code, e.g. click a file in the DEMO folder
-... ...
-
-conda deactivate 
-## when done, exit conda environment 
-```
-</details>
-
-[Video tutorial](https://youtu.be/bqinehjnWvE) to install locally using conda.
-
-Docker image will also be up soon!
-
-
-*We are currently in the testing release stage with frequent modifications based on user feedback. After testing (few months), we will upload to conda for release, which could have easier installation.*
 
 ## Demos
 Checkout 10+ demos & tutorials to start:
@@ -339,6 +412,8 @@ Currently, we support the following encodings:
 | Pubchem| Pubchem Substructure-based Fingerprints|
 | Daylight | Daylight-type fingerprints | 
 | rdkit_2d_normalized| Normalized Descriptastorus|
+| ESPF | Explainable Substructure Partition Fingerprint |
+| ErG | 2D pharmacophore descriptions for scaffold hopping |
 | CNN | Convolutional Neural Network on SMILES|
 |CNN_RNN| A GRU/LSTM on top of a CNN on SMILES|
 |Transformer| Transformer Encoder on ESPF|
@@ -350,6 +425,7 @@ Currently, we support the following encodings:
 | PseudoAAC| Pseudo amino acid composition|
 | Conjoint_triad | Conjoint triad features | 
 | Quasi-seq| Quasi-sequence order descriptor|
+| ESPF | Explainable Substructure Partition Fingerprint |
 | CNN | Convolutional Neural Network on target seq|
 |CNN_RNN| A GRU/LSTM on top of a CNN on target seq|
 |Transformer| Transformer Encoder on ESPF|
@@ -419,6 +495,60 @@ from DeepPurpose import dataset
 X_drug, X_target, y = dataset.read_file_training_dataset_bioassay(PATH)
 ```
 
+For drug property prediction training data:
+```
+Drug1_SMILES Score/Label
+Drug2_SMILES Score/Label
+....
+```
+
+Then, use 
+
+```python 
+from DeepPurpose import dataset
+X_drug, y = dataset.read_file_compound_property(PATH)
+```
+
+For protein function prediction training data:
+```
+Target1_Seq Score/Label
+Target2_Seq Score/Label
+....
+```
+
+Then, use 
+
+```python 
+from DeepPurpose import dataset
+X_drug, y = dataset.read_file_protein_function(PATH)
+```
+
+For drug drug pairs:
+```
+Drug1_SMILES Drug1_SMILES_ Score/Label
+Drug2_SMILES Drug2_SMILES_ Score/Label
+....
+```
+Then, use 
+
+```python 
+from DeepPurpose import dataset
+X_drug, X_target, y = dataset.read_file_training_dataset_drug_drug_pairs(PATH)
+```
+
+For protein protein pairs:
+```
+Target1_Seq Target1_Seq_ Score/Label
+Target2_Seq Target2_Seq_ Score/Label
+....
+```
+Then, use 
+
+```python 
+from DeepPurpose import dataset
+X_drug, X_target, y = dataset.read_file_training_dataset_protein_proteins_pairs(PATH)
+```
+
 For drug repurposing library:
 ```
 Drug1_Name Drug1_SMILES 
@@ -477,7 +607,12 @@ Model name consists of first the drug encoding, then the target encoding and the
 
 |Model Name|
 |------|
-|DeepDTA_DAVIS|
+|CNN_CNN_BindingDB_IC50|
+|Morgan_CNN_BindingDB_IC50|
+|Morgan_AAC_BindingDB_IC50|
+|MPNN_CNN_BindingDB_IC50|
+|Daylight_AAC_BindingDB_IC50|
+|CNN_CNN_DAVIS|
 |CNN_CNN_BindingDB|
 |Morgan_CNN_BindingDB|
 |Morgan_CNN_KIBA|
